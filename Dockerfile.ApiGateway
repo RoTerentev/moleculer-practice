@@ -1,0 +1,33 @@
+FROM node:current-alpine as frontend
+
+ENV NODE_ENV=production
+
+RUN mkdir /appfront
+WORKDIR /appfront
+
+COPY swim-top-www/package*.json ./
+
+RUN npm ci --no-progress
+
+COPY swim-top-www/ ./
+
+RUN npm run build
+
+FROM node:current-alpine as api
+
+RUN mkdir /app
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+
+RUN npm ci \
+    && npm cache clean --force
+
+COPY . .
+
+# TODO: restruct folders
+RUN rm -rf ./swim-top-www
+
+COPY --from=frontend /appfront/build ./public
+
+CMD ["npm", "start"]
